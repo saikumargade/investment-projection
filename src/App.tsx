@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import "./App.css";
-import Highcharts from "highcharts";
-import HighchartsReact from "highcharts-react-official";
 import moment from "moment";
+import InvestmentChart from "./InvestmentChart";
 
-interface ApiResponse {
+interface ApiResponseObject {
   chanceOfUnderPerformingBenchmark: number;
   expectedAmounts: {
     10: number;
@@ -30,7 +29,7 @@ function App() {
 
   useEffect(() => {
     const getData = async () => {
-      const result: Array<ApiResponse> = await fetch(
+      const result: Array<ApiResponseObject> = await fetch(
         "http://www.mocky.io/v2/5e69de892d00007a005f9e29?mocky-delay=2000ms",
         {
           method: "post",
@@ -39,7 +38,9 @@ function App() {
             monthlyInvestment: form.monthlyInvestment,
           }),
         }
-      ).then((response) => response.json());
+      )
+        .then((response) => response.json())
+        .catch((error) => console.log(error));
 
       const data1 = result.map((x) => ({
         name: moment(x?.yearMonth).format("MMMM YYYY"),
@@ -58,7 +59,7 @@ function App() {
         y: x?.expectedAmounts["benchmark"],
       }));
       const data5 = result.map((x) => ({
-        name: x?.yearMonth.substring(0, 4),
+        name: moment(x?.yearMonth).format("MMMM YYYY"),
         y: x?.totalDeposit,
       }));
 
@@ -78,6 +79,44 @@ function App() {
     },
     [form]
   );
+
+  const series = [
+    {
+      name: "Top 25%",
+      data: data1,
+      marker: {
+        symbol: "circle",
+      },
+    },
+    {
+      name: "Median",
+      data: data2,
+      marker: {
+        symbol: "circle",
+      },
+    },
+    {
+      name: "Bottom 10%",
+      data: data3,
+      marker: {
+        symbol: "circle",
+      },
+    },
+    {
+      name: "Benchmark",
+      data: data4,
+      marker: {
+        symbol: "circle",
+      },
+    },
+    {
+      name: "Total deposit",
+      data: data5,
+      marker: {
+        symbol: "circle",
+      },
+    },
+  ];
 
   return (
     <div>
@@ -99,92 +138,7 @@ function App() {
           />
         </div>
       </div>
-      <HighchartsReact
-        highcharts={Highcharts}
-        options={{
-          chart: {
-            type: "spline",
-            scrollablePlotArea: {
-              minWidth: 600,
-              scrollPositionX: 1,
-            },
-          },
-          title: {
-            text: "Plan Projection",
-            align: "left",
-          },
-          xAxis: {
-            type: "linear",
-            tickInterval: 60,
-            labels: {
-              enabled: true,
-              formatter: function (x: any) {
-                return moment(data1[x.pos]?.["name"]).format("YYYY");
-              },
-            },
-          },
-          yAxis: {
-            title: {
-              text: "",
-            },
-            opposite: true,
-            lineWidth: 1,
-            gridLineWidth: 0,
-            tickInterval: 500000,
-          },
-          tooltip: {
-            valuePrefix: "S$",
-            shared: true,
-            crosshairs: true,
-          },
-          plotOptions: {
-            spline: {
-              lineWidth: 2,
-              marker: {
-                enabled: false,
-              },
-            },
-          },
-          series: [
-            {
-              name: "Top 25%",
-              data: data1,
-              marker: {
-                symbol: "circle",
-              },
-            },
-            {
-              name: "Median",
-              data: data2,
-              marker: {
-                symbol: "circle",
-              },
-            },
-            {
-              name: "Bottom 10%",
-              data: data3,
-              marker: {
-                symbol: "circle",
-              },
-            },
-            {
-              name: "Benchmark",
-              data: data4,
-              marker: {
-                symbol: "circle",
-              },
-            },
-            {
-              name: "Total deposit",
-              data: data5,
-              marker: {
-                symbol: "circle",
-                radius: 2,
-              },
-            },
-          ],
-        }}
-      />
+      <InvestmentChart chartTitle="Plan Projection" series={series} />
     </div>
   );
 }
